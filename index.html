@@ -6,10 +6,10 @@
     <title>Scanner QR Code</title>
     <style>
         #video {
-            width: 300px;
-            height: 300px;
+            width: 100%;
+            height: auto;
             border: 1px solid black;
-            display: block; /* Afficher la vidéo */
+            display: none; /* Cacher la vidéo par défaut */
         }
         #result {
             margin-top: 20px;
@@ -46,7 +46,7 @@
     <video id="video" autoplay></video>
     
     <!-- Résultat du QR code scanné -->
-    <div id="result">Le résultat du QR code apparaîtra ici.</div>
+    <div id="result"></div>
     
     <!-- Erreur de caméra -->
     <div id="error"></div>
@@ -60,6 +60,7 @@
         let startButton = document.getElementById('startButton');
         let errorElement = document.getElementById('error');
         let scanning = false;
+        let stream;
 
         // Fonction pour démarrer le scan
         function startScan() {
@@ -67,10 +68,13 @@
 
             startButton.disabled = true;
             errorElement.innerText = '';
+            resultElement.innerText = '';
 
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-                .then(function(stream) {
+                .then(function(localStream) {
+                    stream = localStream;
                     videoElement.srcObject = stream;
+                    videoElement.style.display = 'block'; // Afficher la vidéo
                     videoElement.setAttribute("playsinline", true);
                     videoElement.play();
                     scanning = true;
@@ -111,11 +115,11 @@
         function stopScan() {
             if (!scanning) return;
             scanning = false;
-            let stream = videoElement.srcObject;
             if (stream) {
                 let tracks = stream.getTracks();
                 tracks.forEach(track => track.stop());
                 videoElement.srcObject = null;
+                videoElement.style.display = 'none'; // Cacher la vidéo
             }
             startButton.disabled = false;
         }
@@ -128,7 +132,3 @@
 </body>
 </html>
 
-
-
-</body>
-</html>

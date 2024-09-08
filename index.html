@@ -62,32 +62,28 @@
         let scanning = false;
         let stream;
 
-        // Fonction pour démarrer le scan
-        function startScan() {
+        async function startScan() {
             if (scanning) return;
 
             startButton.disabled = true;
             errorElement.innerText = '';
             resultElement.innerText = '';
 
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-                .then(function(localStream) {
-                    stream = localStream;
-                    videoElement.srcObject = stream;
-                    videoElement.style.display = 'block'; // Afficher la vidéo
-                    videoElement.setAttribute("playsinline", true);
-                    videoElement.play();
-                    scanning = true;
-                    scanQRCode();
-                })
-                .catch(function(err) {
-                    console.error("Erreur lors de l'accès à la caméra:", err);
-                    errorElement.innerText = "Erreur lors de l'accès à la caméra. Assurez-vous que votre caméra est connectée et autorisée.";
-                    startButton.disabled = false;
-                });
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                videoElement.srcObject = stream;
+                videoElement.style.display = 'block'; // Afficher la vidéo
+                videoElement.setAttribute("playsinline", true);
+                videoElement.play();
+                scanning = true;
+                scanQRCode();
+            } catch (err) {
+                console.error("Erreur lors de l'accès à la caméra:", err);
+                errorElement.innerText = "Erreur lors de l'accès à la caméra. Assurez-vous que votre caméra est connectée et autorisée.";
+                startButton.disabled = false;
+            }
         }
 
-        // Fonction pour scanner le QR code
         function scanQRCode() {
             if (!scanning) return;
 
@@ -112,7 +108,6 @@
             }
         }
 
-        // Fonction pour arrêter le scan
         function stopScan() {
             if (!scanning) return;
             scanning = false;
@@ -125,10 +120,13 @@
             startButton.disabled = false;
         }
 
-        // Ajouter l'événement onclick au bouton pour démarrer le scan
         startButton.addEventListener('click', startScan);
 
     </script>
+
+</body>
+</html>
+
 
 </body>
 </html>

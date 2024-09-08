@@ -43,8 +43,6 @@
     <!-- Résultat du QR code scanné -->
     <div id="result">Le résultat du QR code apparaîtra ici.</div>
 
-    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
-
     <script>
         let html5QrCode;
 
@@ -90,12 +88,7 @@
                         },
                         onScanSuccess,
                         onScanError
-                    ).catch(err => {
-                        console.error("Erreur lors du démarrage du scan :", err);
-                        document.getElementById('startButton').disabled = false; // Réactiver le bouton en cas d'erreur
-                    });
-                } else {
-                    console.error("Aucune caméra détectée.");
+                    );
                 }
             }).catch(err => {
                 console.error("Erreur lors de l'obtention des caméras:", err);
@@ -106,10 +99,6 @@
         // Ajouter l'événement onclick au bouton pour démarrer le scan
         document.getElementById('startButton').addEventListener('click', startScan);
     </script>
-
-</body>
-</html>
-
 
 </body>
 </html>

@@ -95,7 +95,9 @@
 
             canvas.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
             let imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-            let decoded = jsQR(imageData.data, canvasElement.width, canvasElement.height);
+            let decoded = jsQR(imageData.data, canvasElement.width, canvasElement.height, {
+                inversionAttempts: "dontInvert",
+            });
 
             if (decoded) {
                 resultElement.innerText = `QR Code scanné : ${decoded.data}`;

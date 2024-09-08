@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner QR Code</title>
+    <style>
+        #reader {
+            width: 300px;
+            height: 300px;
+            border: 1px solid black;
+            display: none; /* Masquer la caméra par défaut */
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: green;
+        }
+        #startButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        #startButton:disabled {
+            background-color: #cccccc;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Scanner un QR Code</h1>
+    
+    <!-- Bouton pour démarrer le scan -->
+    <button id="startButton">Démarrer le scan</button>
+
+    <!-- Le div où la caméra sera affichée -->
+    <div id="reader"></div>
+    
+    <!-- Résultat du QR code scanné -->
+    <div id="result">Le résultat du QR code apparaîtra ici.</div>
+
+    <script>
+        let html5QrCode;
+
+        // Fonction de callback pour afficher le résultat du QR code
+        function onScanSuccess(decodedText, decodedResult) {
+            // Afficher le texte du QR code dans le div "result"
+            document.getElementById('result').innerHTML = `QR Code scanné : ${decodedText}`;
+            
+            // Arrêter le scan après un succès
+            html5QrCode.stop().then(() => {
+                console.log("Scan terminé.");
+            }).catch((err) => {
+                console.error("Erreur lors de l'arrêt du scan", err);
+            });
+
+            // Réactiver le bouton pour redémarrer un scan si nécessaire
+            document.getElementById('startButton').disabled = false;
+        }
+
+        function onScanError(errorMessage) {
+            console.error("Erreur lors du scan:", errorMessage);
+        }
+
+        // Fonction pour démarrer le scan
+        function startScan() {
+            document.getElementById('reader').style.display = "block"; // Afficher la caméra
+            document.getElementById('startButton').disabled = true; // Désactiver le bouton pendant le scan
+
+            // Initialiser html5-qrcode si ce n'est pas déjà fait
+            if (!html5QrCode) {
+                html5QrCode = new Html5Qrcode("reader");
+            }
+
+            // Obtenir la caméra et démarrer le scan
+            Html5Qrcode.getCameras().then(devices => {
+                if (devices && devices.length) {
+                    var cameraId = devices[0].id;
+                    html5QrCode.start(
+                        cameraId, 
+                        {
+                            fps: 10,    // Images par seconde
+                            qrbox: { width: 250, height: 250 }  // Taille de la zone de scan
+                        },
+                        onScanSuccess,
+                        onScanError
+                    );
+                }
+            }).catch(err => {
+                console.error("Erreur lors de l'obtention des caméras:", err);
+                document.getElementById('startButton').disabled = false; // Réactiver le bouton en cas d'erreur
+            });
+        }
+
+        // Ajouter l'événement onclick au bouton pour démarrer le scan
+        document.getElementById('startButton').addEventListener('click', startScan);
+    </script>
+
+</body>
+</html>

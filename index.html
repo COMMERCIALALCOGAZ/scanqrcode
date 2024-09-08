@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scanner QR Code</title>
     <style>
-        #reader {
+        #video {
             width: 300px;
             height: 300px;
             border: 1px solid black;
-            display: none; /* Masquer la caméra par défaut */
+            display: none; /* Masquer la vidéo par défaut */
         }
         #result {
             margin-top: 20px;
@@ -28,6 +28,11 @@
         #startButton:disabled {
             background-color: #cccccc;
         }
+        #error {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: red;
+        }
     </style>
 </head>
 <body>
@@ -37,68 +42,92 @@
     <!-- Bouton pour démarrer le scan -->
     <button id="startButton">Démarrer le scan</button>
 
-    <!-- Le div où la caméra sera affichée -->
-    <div id="reader"></div>
+    <!-- Le video element où la caméra sera affichée -->
+    <video id="video" autoplay></video>
     
     <!-- Résultat du QR code scanné -->
     <div id="result">Le résultat du QR code apparaîtra ici.</div>
+    
+    <!-- Erreur de caméra -->
+    <div id="error"></div>
 
+    <!-- Importer la bibliothèque jsQR -->
+    <script src="https://unpkg.com/jsqr/minified/jsQR.min.js"></script>
+    
     <script>
-        let html5QrCode;
-
-        // Fonction de callback pour afficher le résultat du QR code
-        function onScanSuccess(decodedText, decodedResult) {
-            // Afficher le texte du QR code dans le div "result"
-            document.getElementById('result').innerHTML = `QR Code scanné : ${decodedText}`;
-            
-            // Arrêter le scan après un succès
-            html5QrCode.stop().then(() => {
-                console.log("Scan terminé.");
-            }).catch((err) => {
-                console.error("Erreur lors de l'arrêt du scan", err);
-            });
-
-            // Réactiver le bouton pour redémarrer un scan si nécessaire
-            document.getElementById('startButton').disabled = false;
-        }
-
-        function onScanError(errorMessage) {
-            console.error("Erreur lors du scan:", errorMessage);
-        }
+        let videoElement = document.getElementById('video');
+        let resultElement = document.getElementById('result');
+        let startButton = document.getElementById('startButton');
+        let errorElement = document.getElementById('error');
+        let scanning = false;
 
         // Fonction pour démarrer le scan
         function startScan() {
-            document.getElementById('reader').style.display = "block"; // Afficher la caméra
-            document.getElementById('startButton').disabled = true; // Désactiver le bouton pendant le scan
+            if (scanning) return;
 
-            // Initialiser html5-qrcode si ce n'est pas déjà fait
-            if (!html5QrCode) {
-                html5QrCode = new Html5Qrcode("reader");
+            startButton.disabled = true;
+            videoElement.style.display = 'block';
+            errorElement.innerText = '';
+
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                .then(function(stream) {
+                    videoElement.srcObject = stream;
+                    videoElement.setAttribute("playsinline", true);
+                    videoElement.play();
+                    scanning = true;
+                    scanQRCode();
+                })
+                .catch(function(err) {
+                    console.error("Erreur lors de l'accès à la caméra:", err);
+                    errorElement.innerText = "Erreur lors de l'accès à la caméra. Assurez-vous que votre caméra est connectée et autorisée.";
+                    startButton.disabled = false;
+                });
+        }
+
+        // Fonction pour scanner le QR code
+        function scanQRCode() {
+            if (!scanning) return;
+
+            let canvasElement = document.createElement("canvas");
+            let canvas = canvasElement.getContext("2d");
+
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+
+            canvas.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+            let imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+            let decoded = jsQR(imageData.data, canvasElement.width, canvasElement.height);
+
+            if (decoded) {
+                resultElement.innerText = `QR Code scanné : ${decoded.data}`;
+                stopScan();
+            } else {
+                requestAnimationFrame(scanQRCode);
             }
+        }
 
-            // Obtenir la caméra et démarrer le scan
-            Html5Qrcode.getCameras().then(devices => {
-                if (devices && devices.length) {
-                    var cameraId = devices[0].id;
-                    html5QrCode.start(
-                        cameraId, 
-                        {
-                            fps: 10,    // Images par seconde
-                            qrbox: { width: 250, height: 250 }  // Taille de la zone de scan
-                        },
-                        onScanSuccess,
-                        onScanError
-                    );
-                }
-            }).catch(err => {
-                console.error("Erreur lors de l'obtention des caméras:", err);
-                document.getElementById('startButton').disabled = false; // Réactiver le bouton en cas d'erreur
-            });
+        // Fonction pour arrêter le scan
+        function stopScan() {
+            if (!scanning) return;
+            scanning = false;
+            videoElement.style.display = 'none';
+            startButton.disabled = false;
+            let stream = videoElement.srcObject;
+            if (stream) {
+                let tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+                videoElement.srcObject = null;
+            }
         }
 
         // Ajouter l'événement onclick au bouton pour démarrer le scan
-        document.getElementById('startButton').addEventListener('click', startScan);
+        startButton.addEventListener('click', startScan);
+
     </script>
+
+</body>
+</html>
+
 
 </body>
 </html>

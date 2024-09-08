@@ -5,18 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scanner QR Code</title>
     <style>
-        #video {
+        #qr-reader {
             width: 100%;
             height: auto;
-            border: 1px solid black;
-            display: none; /* Cacher la vidéo par défaut */
+            display: none; /* Cacher le lecteur QR par défaut */
         }
         #result {
             margin-top: 20px;
             font-size: 1.2em;
             color: green;
         }
-        #startButton {
+        #startButton, #captureButton {
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
@@ -24,8 +23,12 @@
             color: white;
             border: none;
             border-radius: 5px;
+            margin-top: 10px;
         }
-        #startButton:disabled {
+        #captureButton {
+            background-color: #2196F3;
+        }
+        #startButton:disabled, #captureButton:disabled {
             background-color: #cccccc;
         }
         #error {
@@ -39,11 +42,11 @@
 
     <h1>Scanner un QR Code</h1>
     
-    <!-- Bouton pour démarrer le scan -->
+    <!-- Boutons pour démarrer le scan et capturer une photo -->
     <button id="startButton">Démarrer le scan</button>
 
-    <!-- Le video element où la caméra sera affichée -->
-    <video id="video" autoplay></video>
+    <!-- Element pour le lecteur QR -->
+    <div id="qr-reader"></div>
     
     <!-- Résultat du QR code scanné -->
     <div id="result"></div>
@@ -51,82 +54,56 @@
     <!-- Erreur de caméra -->
     <div id="error"></div>
 
-    <!-- Importer la bibliothèque jsQR -->
-    <script src="https://unpkg.com/jsqr/minified/jsQR.min.js"></script>
+    <!-- Importer la bibliothèque html5-qrcode -->
+    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
     
     <script>
-        let videoElement = document.getElementById('video');
-        let resultElement = document.getElementById('result');
-        let startButton = document.getElementById('startButton');
-        let errorElement = document.getElementById('error');
-        let scanning = false;
-        let stream;
+        const startButton = document.getElementById('startButton');
+        const qrReaderElement = document.getElementById('qr-reader');
+        const resultElement = document.getElementById('result');
+        const errorElement = document.getElementById('error');
+        let html5QrCode;
 
         async function startScan() {
-            if (scanning) return;
-
-            startButton.disabled = true;
-            errorElement.innerText = '';
-            resultElement.innerText = '';
-
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                videoElement.srcObject = stream;
-                videoElement.style.display = 'block'; // Afficher la vidéo
-                videoElement.setAttribute("playsinline", true);
-                videoElement.play();
-                scanning = true;
-                scanQRCode();
-            } catch (err) {
-                console.error("Erreur lors de l'accès à la caméra:", err);
+                if (html5QrCode) {
+                    html5QrCode.stop().catch((error) => {
+                        console.error("Erreur lors de l'arrêt de la caméra:", error);
+                    });
+                }
+
+                html5QrCode = new Html5Qrcode("qr-reader");
+
+                const config = { 
+                    fps: 10, 
+                    qrbox: 250,
+                    aspectRatio: 1.0 
+                };
+
+                await html5QrCode.start({ facingMode: "environment" }, config, (decodedText, decodedResult) => {
+                    resultElement.innerText = `QR Code scanné : ${decodedText}`;
+                    stopScan();
+                });
+
+                qrReaderElement.style.display = 'block'; // Afficher le lecteur QR
+            } catch (error) {
+                console.error("Erreur lors de l'accès à la caméra:", error);
                 errorElement.innerText = "Erreur lors de l'accès à la caméra. Assurez-vous que votre caméra est connectée et autorisée.";
-                startButton.disabled = false;
-            }
-        }
-
-        function scanQRCode() {
-            if (!scanning) return;
-
-            let canvasElement = document.createElement("canvas");
-            let canvas = canvasElement.getContext("2d");
-
-            canvasElement.width = videoElement.videoWidth;
-            canvasElement.height = videoElement.videoHeight;
-
-            canvas.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-            let imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-            let decoded = jsQR(imageData.data, canvasElement.width, canvasElement.height, {
-                inversionAttempts: "dontInvert",
-            });
-
-            if (decoded) {
-                resultElement.innerText = `QR Code scanné : ${decoded.data}`;
-                stopScan();
-            } else {
-                // Réessayez après un court délai pour améliorer la détection
-                setTimeout(scanQRCode, 500);
             }
         }
 
         function stopScan() {
-            if (!scanning) return;
-            scanning = false;
-            if (stream) {
-                let tracks = stream.getTracks();
-                tracks.forEach(track => track.stop());
-                videoElement.srcObject = null;
-                videoElement.style.display = 'none'; // Cacher la vidéo
+            if (html5QrCode) {
+                html5QrCode.stop().catch((error) => {
+                    console.error("Erreur lors de l'arrêt de la caméra:", error);
+                });
+                qrReaderElement.style.display = 'none'; // Cacher le lecteur QR
             }
-            startButton.disabled = false;
         }
 
         startButton.addEventListener('click', startScan);
-
     </script>
 
 </body>
 </html>
 
-
-</body>
-</html>

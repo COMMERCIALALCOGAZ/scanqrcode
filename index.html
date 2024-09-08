@@ -5,105 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scanner QR Code</title>
     <style>
-        #qr-reader {
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        .qr-reader {
             width: 100%;
-            height: auto;
-            display: none; /* Cacher le lecteur QR par défaut */
+            max-width: 500px;
+            margin: 0 auto;
         }
-        #result {
+
+        .result {
             margin-top: 20px;
-            font-size: 1.2em;
-            color: green;
-        }
-        #startButton, #captureButton {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            margin-top: 10px;
-        }
-        #captureButton {
-            background-color: #2196F3;
-        }
-        #startButton:disabled, #captureButton:disabled {
-            background-color: #cccccc;
-        }
-        #error {
-            margin-top: 20px;
-            font-size: 1.2em;
-            color: red;
+            font-size: 18px;
+            color: #333;
         }
     </style>
 </head>
 <body>
-
-    <h1>Scanner un QR Code</h1>
-    
-    <!-- Boutons pour démarrer le scan et capturer une photo -->
-    <button id="startButton">Démarrer le scan</button>
-
-    <!-- Element pour le lecteur QR -->
-    <div id="qr-reader"></div>
-    
-    <!-- Résultat du QR code scanné -->
-    <div id="result"></div>
-    
-    <!-- Erreur de caméra -->
-    <div id="error"></div>
-
-    <!-- Importer la bibliothèque html5-qrcode -->
+    <div class="container">
+        <h1>Scanner QR Code</h1>
+        <div id="qr-reader" class="qr-reader"></div>
+        <div id="result" class="result"></div>
+    </div>
     <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
-    
     <script>
-        const startButton = document.getElementById('startButton');
-        const qrReaderElement = document.getElementById('qr-reader');
-        const resultElement = document.getElementById('result');
-        const errorElement = document.getElementById('error');
-        let html5QrCode;
+        document.addEventListener("DOMContentLoaded", function() {
+            const qrReader = new Html5Qrcode("qr-reader");
 
-        async function startScan() {
-            try {
-                if (html5QrCode) {
-                    html5QrCode.stop().catch((error) => {
-                        console.error("Erreur lors de l'arrêt de la caméra:", error);
-                    });
-                }
-
-                html5QrCode = new Html5Qrcode("qr-reader");
-
-                const config = { 
-                    fps: 10, 
-                    qrbox: 250,
-                    aspectRatio: 1.0 
-                };
-
-                await html5QrCode.start({ facingMode: "environment" }, config, (decodedText, decodedResult) => {
-                    resultElement.innerText = `QR Code scanné : ${decodedText}`;
-                    stopScan();
+            function onScanSuccess(decodedText, decodedResult) {
+                // Handle the result here
+                document.getElementById("result").innerText = `QR Code Scanned: ${decodedText}`;
+                qrReader.stop().then(() => {
+                    console.log("QR Code scanning stopped.");
+                }).catch((err) => {
+                    console.error("Unable to stop scanning: ", err);
                 });
-
-                qrReaderElement.style.display = 'block'; // Afficher le lecteur QR
-            } catch (error) {
-                console.error("Erreur lors de l'accès à la caméra:", error);
-                errorElement.innerText = "Erreur lors de l'accès à la caméra. Assurez-vous que votre caméra est connectée et autorisée.";
             }
-        }
 
-        function stopScan() {
-            if (html5QrCode) {
-                html5QrCode.stop().catch((error) => {
-                    console.error("Erreur lors de l'arrêt de la caméra:", error);
+            function onScanError(errorMessage) {
+                // Handle scan error
+                console.warn(`QR Code scan error: ${errorMessage}`);
+            }
+
+            const config = { fps: 10, qrbox: 250 };
+
+            qrReader.start({ facingMode: "environment" }, config, onScanSuccess, onScanError)
+                .catch((err) => {
+                    console.error("Unable to start scanning: ", err);
                 });
-                qrReaderElement.style.display = 'none'; // Cacher le lecteur QR
-            }
-        }
-
-        startButton.addEventListener('click', startScan);
+        });
     </script>
-
 </body>
 </html>
 

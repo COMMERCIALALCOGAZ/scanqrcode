@@ -107,7 +107,8 @@
                 resultElement.innerText = `QR Code scanné : ${decoded.data}`;
                 stopScan();
             } else {
-                requestAnimationFrame(scanQRCode);
+                // Réessayez après un court délai pour améliorer la détection
+                setTimeout(scanQRCode, 500);
             }
         }
 
@@ -131,4 +132,3 @@
 
 </body>
 </html>
-
